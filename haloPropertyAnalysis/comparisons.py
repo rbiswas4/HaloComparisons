@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
+from .utils import fracPoissonErrors
 
 __all__ = ['Sim', 'CompareSims']
 class Sim(object):
@@ -85,6 +86,7 @@ class CompareSims(object):
         mass2 = df2.FOF_Mass.values
         mf1 = df1.dndlnM.values
         mf2 = df2.dndlnM.values
+        numClusters2 = df2.numClusters
         
         # Note interpolation is not possible if mass2 is outside the range
         # of mass1. So return np.nan values
@@ -102,13 +104,22 @@ class CompareSims(object):
     
         dfdict = dict()
         dfdict[names[0]] = mass1
-        dfdict[names[1]] = mass2
-        dfdict[names[2]] = mf1
+        dfdict[names[1]] = mf1
+        dfdict[names[2]] = mass2
         dfdict[names[3]] = mf2
         dfdict[names[4]] = mf2interp
-    
+        dfdict['numClusters1'] = df1.numClusters.values
+        dfdict['numClusters2'] = df2.numClusters.values
+        fracErrors1 = fracPoissonErrors(dfdict['numClusters1'])
+        fracErrors2 = fracPoissonErrors(dfdict['numClusters2'])
+        combinederr = np.sqrt((fracErrors1 * mf1 )**2 +
+                (fracErrors2 * mf2interp )**2 )
         dfdict['directRatio'] = mf2 / mf1
         dfdict['interpolatedRatio'] = mf2interp / mf1
+        dfdict['ApproxErrorLow'] = combinederr[0, :]
+        dfdict['ApproxErrorHigh'] = combinederr[1, :]
+        # for key in dfdict.keys():
+        #    print(key, len(dfdict[key]))
         df = pd.DataFrame(dfdict)
         df['stepNum'] = stepnum
         return df
@@ -123,7 +134,10 @@ class CompareSims(object):
         fig, (ax) = plt.subplots(numSteps, 1, sharex=True)
         for ind, step in enumerate(steps):
             res = grouped.get_group(step)
-            ax[ind].plot(res[self.sim1name + '_mass'], res['interpolatedRatio'],'bo')
+            ax[ind].errorbar(res[self.sim1name + '_mass'],
+                             res['interpolatedRatio'],
+                             yerr=(res['ApproxErrorLow'], res['ApproxErrorHigh']),
+                             fmt='bo')
             ax[ind].set_title("step = {0:3d}".format(step))
             ax[ind].plot(res[self.sim1name + '_mass'], res['directRatio'],'r+')
             ax[ind].set_xscale('log')
@@ -131,7 +145,7 @@ class CompareSims(object):
             ax[ind].grid(True)
 
         ax[-1].set_xlabel(r'$\rm{Mass} (M_\odot/h)$')
-        ax[1].set_ylabel('dn/dlnM('+self.sim2name + ')/dn/dlnM(' + self.sim1name +')' )
         fig.tight_layout(pad=0.)
+        ax[1].set_ylabel('dn/dlnM('+self.sim2name + ')/dn/dlnM(' + self.sim1name +')' )
         return fig
     
