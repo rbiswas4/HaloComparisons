@@ -3,7 +3,7 @@
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
-from haloPropertyAnalysis import *
+from haloPropertyAnalysis.comparisons import Sim, CompareSims
 
 datastar = '/Users/rbiswas/data/datastar'
 M000n1dir = os.path.join(datastar, 'clustering')

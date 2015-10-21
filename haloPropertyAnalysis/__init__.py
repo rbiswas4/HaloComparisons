@@ -1,2 +1,2 @@
-from .comparisons import *
-from .utils import *
+from . import comparisons
+from . import utils

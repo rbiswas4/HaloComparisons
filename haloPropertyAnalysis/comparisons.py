@@ -112,8 +112,8 @@ class CompareSims(object):
         dfdict['numClusters2'] = df2.numClusters.values
         fracErrors1 = fracPoissonErrors(dfdict['numClusters1'])
         fracErrors2 = fracPoissonErrors(dfdict['numClusters2'])
-        combinederr = np.sqrt((fracErrors1 * mf1 )**2 +
-                (fracErrors2 * mf2interp )**2 )
+        combinederr = mf2interp * np.sqrt((fracErrors1 )**2 +
+                                          (fracErrors2 )**2 ) / mf1
         dfdict['directRatio'] = mf2 / mf1
         dfdict['interpolatedRatio'] = mf2interp / mf1
         dfdict['ApproxErrorLow'] = combinederr[0, :]
